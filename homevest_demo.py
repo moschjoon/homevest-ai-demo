@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 import random
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="HomeVest AI – Grant Demo", layout="wide", page_icon="🏡")
 
@@ -118,8 +119,130 @@ equity = round((loan_amt * (growth_rate / 100)) * years + deposit_amt)
 st.success(f"Projected Equity in {years} years: ${equity:,.0f}")
 st.caption("💡 Tip: Granny flat or solar upgrade can improve ROI.")
 
-# --- 6. Tax Deduction ---
-st.header("🧾 6. Tax Deduction Analysis")
+# --- 6. Smart Property Portfolio Planner ---
+st.header("🏘️ 6. Smart Property Portfolio Planner")
+
+goal_props = st.number_input("🎯 Desired Number of Properties", min_value=1, max_value=10, value=3)
+years_to_target = st.slider("⏳ Years to Reach Goal", 3, 30, 10)
+salary_growth = st.slider("📈 Annual Salary Growth (%)", 0.0, 10.0, 3.0)
+
+st.markdown("The planner forecasts how you can reach your goal by suggesting locations and property types based on price, equity, and lending criteria.")
+
+# Mock property market data (location + price ranges)
+market_data = {
+    "Blacktown": {"House": 750000, "Unit": 580000},
+    "Parramatta": {"Unit": 720000, "Townhouse": 820000},
+    "Auburn": {"Unit": 630000, "House": 790000},
+    "Penrith": {"House": 670000, "Unit": 520000},
+    "Liverpool": {"Townhouse": 680000, "Unit": 560000},
+}
+
+# Lending assumptions
+buffer_rate = 0.08  # Stress-tested interest rate
+repayment_limit = 0.35
+min_equity_pct = 0.20  # 20% deposit
+growth_rate = 0.03
+
+# Starting state
+current_salary = income + joint_income
+current_equity = equity
+portfolio = 1
+suggestions = []
+
+# --- Occupancy Preference ---
+occupancy = st.radio("🏠 Occupancy Goal for Future Properties", ["Live in", "Rentvest"])
+
+# Custom market preferences based on strategy
+preferred_suburbs_livein = ["Parramatta", "Blacktown", "Liverpool"]
+preferred_suburbs_rentvest = ["Penrith", "Auburn", "Blacktown"]
+
+if occupancy == "Live in":
+    suburb_filter = preferred_suburbs_livein
+    st.caption("Focusing on areas with strong amenities and schools.")
+else:
+    suburb_filter = preferred_suburbs_rentvest
+    st.caption("Focusing on high-growth or high-yield rentvestment suburbs.")
+
+# Forecast loop by year
+for year in range(1, years_to_target + 1):
+    current_salary *= (1 + salary_growth / 100)
+    current_equity += 50000  # Simulated annual equity growth
+
+    viable_options = []
+    for suburb, types in market_data.items():
+        if suburb not in suburb_filter:
+            continue
+        for prop_type, price in types.items():
+            repayment_ratio = (loan_amt * buffer_rate) / current_salary
+            if current_equity >= price * min_equity_pct and repayment_ratio <= repayment_limit:
+                viable_options.append((price, suburb, prop_type))
+
+    viable_options.sort()  # Lowest price first
+    if viable_options and portfolio < goal_props:
+        selected = viable_options[0]
+        price, suburb, prop_type = selected
+        current_equity -= price * min_equity_pct
+        suggestions.append(
+            f"📍 Year {year}: Buy a **{prop_type} in {suburb}** for ${price:,} – using equity ${round(price * 0.2):,}"
+        )
+        portfolio += 1
+    else:
+        suggestions.append(f"📍 Year {year}: Hold & build equity – not yet enough to buy")
+
+# Output
+st.subheader("📆 Forecast Plan")
+for s in suggestions:
+    st.markdown(s)
+
+# --- Portfolio Line Chart ---
+st.subheader("📊 Portfolio Growth Chart")
+
+years_list = list(range(1, years_to_target + 1))
+prop_counts = []
+equity_track = []
+curr_salary = income + joint_income
+curr_equity = equity
+curr_portfolio = 1
+
+for year in years_list:
+    curr_salary *= (1 + salary_growth / 100)
+    curr_equity += 50000
+    viable_found = False
+    for suburb in suburb_filter:
+        for prop_type, price in market_data.get(suburb, {}).items():
+            if curr_equity >= price * min_equity_pct and ((loan_amt * buffer_rate) / curr_salary) <= repayment_limit:
+                curr_equity -= price * min_equity_pct
+                curr_portfolio += 1
+                viable_found = True
+                break
+        if viable_found:
+            break
+    prop_counts.append(curr_portfolio)
+    equity_track.append(curr_equity)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=years_list, y=prop_counts, name="Total Properties", mode="lines+markers"))
+fig.add_trace(go.Scatter(x=years_list, y=equity_track, name="Equity ($)", mode="lines+markers", yaxis="y2"))
+
+fig.update_layout(
+    title="📈 Property Count and Equity Forecast",
+    xaxis_title="Year",
+    yaxis=dict(title="Properties", side="left"),
+    yaxis2=dict(title="Equity ($)", overlaying='y', side='right', showgrid=False),
+    legend=dict(x=0.01, y=1.15, orientation="h"),
+    height=400
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+if portfolio >= goal_props:
+    st.success(f"🎉 Based on equity + affordability, you may own {goal_props} properties in {year} years!")
+else:
+    st.warning("⚠️ Timeline may need to extend — not enough equity/income for desired growth.")
+
+
+# --- 7. Tax Deduction ---
+st.header("🧾 7. Tax Deduction Analysis")
 tax_mode = st.radio("Choose Analysis Type", ["Forecast Future (Rentvesting)", "Current Year Report (Manual Entry)"])
 if tax_mode == "Forecast Future (Rentvesting)":
     rent_years = st.slider("Years Renting the Property", 1, 15, 5)
@@ -135,8 +258,8 @@ else:
     total_deductions = interest + repairs + depreciation + agent_fees + other_costs
     st.success(f"🧾 Your current tax deduction total: ${total_deductions:,.0f}")
 
-# --- 7. Contract & Inspection Review ---
-st.header("📜 7. Contract & Inspection Check")
+# --- 8. Contract & Inspection Review ---
+st.header("📜 8. Contract & Inspection Check")
 st.file_uploader("Upload Contract or Inspection PDF", type=["pdf"])
 if st.button("⚖️ Run Check"):
     issues = ["Minor guttering issue", "Drainage easement", "Moderate traffic noise"]
@@ -149,8 +272,8 @@ if st.button("⚖️ Run Check"):
     st.write(f"- {random.choice(issues)}\n- {random.choice(issues)}")
     st.warning(f"💬 Suggestion: {suggestion}")
 
-# --- 8. Broker Match AI ---
-st.header("🔍 8. Broker Match AI")
+# --- 9. Broker Match AI ---
+st.header("🔍 9. Broker Match AI")
 broker_goal = st.selectbox("Broker preference", ["Lowest Rate", "Ethical Advice", "Fast Approval"])
 if st.button("🎯 Find Broker"):
     brokers = {
@@ -160,8 +283,8 @@ if st.button("🎯 Find Broker"):
     }
     st.success(f"📨 Recommended Broker: {brokers[broker_goal]}")
 
-# --- 9. Inspector Finder ---
-st.header("🕵️ 9. Inspector Finder")
+# --- 10. Inspector Finder ---
+st.header("🕵️ 10. Inspector Finder")
 location = st.text_input("Property Suburb or Postcode")
 inspection_type = st.selectbox("Inspection Type", ["Building Only", "Pest Only", "Building & Pest"])
 urgency = st.radio("Urgency Level", ["Standard (1 week)", "Express (48h)"])
@@ -172,8 +295,8 @@ if st.button("🔎 Find Inspectors"):
 - **NSW Property Checks** – 4.7⭐ | $390 | Available: 5 days  
 """)
 
-# --- 10. Home Insurance Advisor ---
-st.header("🛡️ 10. Home Insurance Match")
+# --- 11. Home Insurance Advisor ---
+st.header("🛡️ 11. Home Insurance Match")
 structure_type = st.selectbox("Building Type", ["House", "Apartment", "Townhouse"])
 contents_cover = st.checkbox("Include contents insurance?")
 esg_score = st.slider("Climate Risk (0 = low risk, 10 = high risk)", 0, 10, 3)
