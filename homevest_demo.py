@@ -221,16 +221,61 @@ for year in years_list:
     equity_track.append(curr_equity)
 
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=years_list, y=prop_counts, name="Total Properties", mode="lines+markers"))
-fig.add_trace(go.Scatter(x=years_list, y=equity_track, name="Equity ($)", mode="lines+markers", yaxis="y2"))
+
+fig.add_trace(go.Scatter(
+    x=years_list, y=prop_counts,
+    name="Total Properties",
+    mode="lines+markers",
+    line=dict(color="#636EFA", width=3),
+    marker=dict(size=8, symbol="circle"),
+    hovertemplate="Year %{x}: %{y} properties"
+))
+
+fig.add_trace(go.Scatter(
+    x=years_list, y=equity_track,
+    name="Equity ($)",
+    mode="lines+markers",
+    yaxis="y2",
+    line=dict(color="#00CC96", width=3, dash="dash"),
+    marker=dict(size=8, symbol="diamond"),
+    hovertemplate="Year %{x}: $%{y:,.0f} equity"
+))
 
 fig.update_layout(
-    title="📈 Property Count and Equity Forecast",
-    xaxis_title="Year",
-    yaxis=dict(title="Properties", side="left"),
-    yaxis2=dict(title="Equity ($)", overlaying='y', side='right', showgrid=False),
-    legend=dict(x=0.01, y=1.15, orientation="h"),
-    height=400
+    title=dict(
+        text="📈 Property Count and Equity Forecast",
+        font=dict(size=22, color="#3b0764"),
+        x=0.5
+    ),
+    xaxis=dict(
+        title="Year",
+        showgrid=True,
+        gridcolor="#e5ecf6",
+        tickmode="linear"
+    ),
+    yaxis=dict(
+        title="Properties",
+        side="left",
+        showgrid=True,
+        gridcolor="#e5ecf6",
+        rangemode="tozero"
+    ),
+    yaxis2=dict(
+        title="Equity ($)",
+        overlaying='y',
+        side='right',
+        showgrid=False,
+        tickformat=",.0f",
+        rangemode="tozero"
+    ),
+    legend=dict(
+        x=0.5, y=1.15, orientation="h", xanchor="center",
+        bgcolor="rgba(255,255,255,0.7)", bordercolor="#ccc", borderwidth=1
+    ),
+    plot_bgcolor="#fcfcff",
+    paper_bgcolor="#f7f7fa",
+    height=450,
+    margin=dict(t=80, b=40, l=60, r=60)
 )
 
 st.plotly_chart(fig, use_container_width=True)
