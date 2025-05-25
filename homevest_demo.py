@@ -47,7 +47,7 @@ with col2:
     st.caption("Your AI-powered property journey – from grant matching to equity planning")
 
 st.markdown("#### 🧪 *NSW MVP Grant Demo – mock data prototype*")
-st.info("This app simulates the full user journey with mock data. It includes agents for suburb match, grant discovery, climate risk, mortgage simulation, contract review, tax deduction, and broker match.")
+st.info("This app simulates the full user journey with mock data. It includes agents for suburb match, grant discovery, climate risk, mortgage simulation, contract review, tax deduction, Insurance Advisor AI, Smart Portfolio Planner, and broker match.")
 
 # --- 1. Applicant Setup ---
 st.header("👥 1. Applicant Setup")
