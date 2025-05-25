@@ -2,8 +2,10 @@ import streamlit as st
 from PIL import Image
 import random
 import plotly.graph_objects as go
+import io
+from reportlab.pdfgen import canvas
+st.set_page_config(page_title="HomeVest AI", page_icon="favicon.ico")
 
-st.set_page_config(page_title="HomeVest AI – Grant Demo", layout="wide", page_icon="🏡")
 
 # --- Custom Styling ---
 custom_style = '''
@@ -183,8 +185,9 @@ for year in range(1, years_to_target + 1):
         price, suburb, prop_type = selected
         current_equity -= price * min_equity_pct
         suggestions.append(
-            f"📍 Year {year}: Buy a **{prop_type} in {suburb}** for ${price:,} – using equity ${round(price * 0.2):,}"
+          f"📍 **Year {year}**: Buy a **{prop_type}** in **{suburb}** for **${price:,.0f}** – using equity **${price * min_equity_pct:,.0f}**"
         )
+
         portfolio += 1
     else:
         suggestions.append(f"📍 Year {year}: Hold & build equity – not yet enough to buy")
@@ -353,6 +356,17 @@ if st.button("🏠 Recommend Insurance"):
 """)
 
 # --- Export ---
-st.button("📄 Export Smart Buyer PDF Report")
+if st.button("📄 Download Smart Buyer PDF"):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer)
+    c.drawString(100, 800, "HomeVest AI – Smart Buyer Report")
+    c.drawString(100, 780, f"Total Income: ${total_income:,.0f}")
+    c.drawString(100, 760, f"Property Price: ${prop_price:,.0f}")
+    c.drawString(100, 740, f"Projected Equity: ${equity:,.0f} in {years} years")
+    c.save()
+    buffer.seek(0)
+    st.download_button("📩 Export Report", data=buffer, file_name="HomeVest_Report.pdf")
+# --- Legal Disclaimer ---
 st.markdown("---")
-st.caption("🔐 Mock simulation for NSW MVP Grant – All data is illustrative and educational.")
+st.caption("📘 This simulation is for educational purposes only and uses mock data. Results are not financial advice.")
+st.caption("© 2025 HomeVest AI | Built with Streamlit")
